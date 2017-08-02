@@ -92,18 +92,19 @@ class StatsClientBase(object):
         """Decrement a stat by `count`."""
         self.incr(stat, -count, rate)
 
-    def gauge(self, stat, value, rate=1, delta=False):
+    def gauge(self, stat, value, rate=1, delta=False, kv=False):
         """Set a gauge value."""
+        typ = 'kv' if kv else 'g'
         if value < 0 and not delta:
             if rate < 1:
                 if random.random() > rate:
                     return
             with self.pipeline() as pipe:
-                pipe._send_stat(stat, '0|g', 1)
-                pipe._send_stat(stat, '%s|g' % value, 1)
+                pipe._send_stat(stat, '0|%s' % typ, 1)
+                pipe._send_stat(stat, '%s|%s' % (value, typ), 1)
         else:
             prefix = '+' if delta and value >= 0 else ''
-            self._send_stat(stat, '%s%s|g' % (prefix, value), rate)
+            self._send_stat(stat, '%s%s|%s' % (prefix, value, typ), rate)
 
     def set(self, stat, value, rate=1):
         """Set a set value."""
